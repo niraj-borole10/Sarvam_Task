@@ -1,0 +1,18 @@
+{
+  "name": "sarvam-healthcare-agent",
+  "version": "1.0.0",
+  "author": "Niraj Borole — Department of Chemical Engineering, IIT Kharagpur",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --watch --env-file=.env src/server.js",
+    "chat": "node --env-file=.env chat.mjs"
+  },
+  "dependencies": {
+    "sarvamai": "^1.1.11"
+  }
+}
