@@ -1,96 +1,200 @@
-# Sarvam Healthcare Agent (JavaScript)
+# ✳ CareConnect — Sarvam Healthcare Agent
 
-**Author:** Niraj Borole  
-**Department:** Department of Chemical Engineering, IIT Kharagpur
+### Care that speaks your language.
 
-A Node.js web application and API for multilingual healthcare administration conversations. Open `http://localhost:3000` for the CareConnect frontend: chat, language selection, voice recording/replies, and a care campaign form. Sarvam handles chat, speech transcription, speech generation, and translation. Appointment, insurance, reminder, and campaign actions are sent to a separately authenticated healthcare workflow service; this project does not invent or store clinic data.
+CareConnect is a multilingual healthcare administration assistant built with JavaScript and Sarvam AI. **The project supports eight languages: English, Hindi, Tamil, Telugu, Kannada, Marathi, Bengali, and Gujarati.** Patients can talk or type, receive a text response and (when enabled) a spoken reply, and get help navigating everyday care coordination. The project brings chat, voice, language support, and clinic workflow integration into one approachable web experience.
 
-## What it includes
+> **Created by Niraj Borole**<br>
+> Department of Chemical Engineering · Indian Institute of Technology Kharagpur
 
-- `POST /api/v1/chat` — text conversations with Sarvam Chat Completion and controlled workflow tool calling.
-- `POST /api/v1/voice/webhook` — accepts a transcript or a short base64 audio clip, transcribes audio with Saaras, runs the same agent, and returns Bulbul audio by default.
-- `POST /api/v1/campaigns/trigger` — submits a campaign to the workflow service.
-- `POST /api/v1/translate` — uses Sarvam Translate for text translation.
-- Workflow tools for slot lookup, booking, rescheduling, cancellation, cashless verification, pre-authorization status, and reminder scheduling.
+---
 
-## Requirements
+## ✨ What the project does
 
-- Node.js 20 or newer.
-- A Sarvam API key.
-- A healthcare workflow adapter/API implementing the routes below before enabling booking, insurance, reminders, or campaigns.
+- **Chat and voice intake:** Type a request or record a short message in the browser. Voice clips are transcribed, handled as a conversation, and answered in text with optional audio playback.
+- **Eight supported conversation languages:** English, Hindi, Tamil, Telugu, Kannada, Marathi, Bengali, and Gujarati.
+- **Appointment coordination:** Check available slots, request a booking, reschedule, or cancel through a connected clinic workflow service.
+- **Insurance coordination:** Submit a cashless insurance verification request and check pre-authorization status through the configured provider integration.
+- **Patient engagement:** Submit post-appointment follow-up, preventive care, and re-engagement campaigns. Reminders can be scheduled through the clinic workflow service.
+- **Translation:** Translate text through Sarvam Translate.
+- **Care team interface:** A responsive workspace includes patient assistant and campaign views, backend connection controls, and a movable Care Tools panel.
 
-## Setup
+Sarvam powers conversation, speech recognition, speech generation, and translation. The clinic's trusted workflow service remains responsible for real patient records and operational actions. Without that integration configured, the assistant does not claim that an appointment, insurance check, or reminder has been completed.
 
-1. Set a long, random `API_AUTH_TOKEN` in `.env` and verify `SARVAM_API_KEY` is already set. If `.env` exists from the initial chat setup, add the missing settings from `.env.example` without overwriting the existing key. Keep `.env` private; it is ignored by Git.
-2. Install dependencies with `npm install`.
-3. Start the API with `npm start` (or `npm run dev` for local auto-reload).
-4. The health check is `GET http://localhost:3000/healthz`.
+## 🧭 How it fits together
 
-The static frontend is served from `/` and assets are public. It asks you to paste `API_AUTH_TOKEN` from `.env`; the token is held in tab-scoped session storage and sent only in the Authorization header. API routes other than `/healthz` and the frontend require `Authorization: Bearer <API_AUTH_TOKEN>`. Keep this service behind HTTPS in deployment; do not expose the shared token in a public browser app. `WORKFLOW_API_URL` and `WORKFLOW_API_TOKEN` configure the clinic integration.
+```mermaid
+flowchart LR
+    P[Patient<br/>text or voice] --> UI[CareConnect web app]
+    UI --> API[Node.js API]
+    API --> AG[Conversation orchestrator]
+    AG --> LLM[Sarvam Chat Completion]
+    API --> STT[Saaras speech recognition]
+    API --> TTS[Bulbul speech generation]
+    API --> TR[Sarvam Translate]
+    AG --> WF[Authorized clinic workflow API]
+    WF --> EHR[Scheduling · insurance · reminders]
+    LLM --> AG
+    AG --> API
+    TTS --> UI
+    API --> UI
+```
 
-The API never logs request bodies, transcripts, patient identifiers, insurance data, or provider response bodies. Conversation history is supplied by the caller; this service does not persist it. Send only the minimum necessary information and use opaque, authorized patient identifiers.
+### Technology
 
-## Frontend and chat request
+| Area | Implementation |
+| --- | --- |
+| Runtime | Node.js 20+ with ES modules |
+| Server | Node.js built-in HTTP server |
+| Sarvam integration | Official `sarvamai` JavaScript SDK |
+| Chat | `sarvam-105b-conversations` with controlled tool calling |
+| Speech | Saaras v4 transcription and Bulbul v3 synthesis |
+| Translation | `sarvam-translate:v1` |
+| Frontend | HTML, CSS, and browser JavaScript |
+| Clinic operations | Separately configured workflow API |
+
+## 🚀 Get started
+
+### Requirements
+
+- Node.js 20 or newer and npm
+- A Sarvam API key
+- A clinic workflow API if you want to perform real scheduling, insurance, reminder, or campaign actions
+
+### 1. Configure environment
+
+Copy `.env.example` to `.env` in the project root. Fill in `SARVAM_API_KEY` and create a long random value for `API_AUTH_TOKEN`. Keep `.env` private; Git ignores it.
+
+```env
+SARVAM_API_KEY=your_sarvam_api_key
+API_AUTH_TOKEN=your_long_random_access_token
+PORT=3000
+WORKFLOW_API_URL=
+WORKFLOW_API_TOKEN=
+REQUEST_TIMEOUT_MS=45000
+MAX_BODY_BYTES=8000000
+```
+
+`WORKFLOW_API_URL` and `WORKFLOW_API_TOKEN` are needed only when connecting a trusted clinic adapter. If you set a workflow URL, you must also set its token.
+
+### 2. Install and start
+
+```bash
+npm install
+npm start
+```
+
+For development with automatic restart:
+
+```bash
+npm run dev
+```
+
+Open **http://localhost:3000**. Select **Add API token**, then paste the value of `API_AUTH_TOKEN` from `.env`. The token is kept in the current browser tab's session storage. Check **http://localhost:3000/healthz** for the server health response.
+
+### 3. Try a conversation
+
+In the assistant, select a language and try:
+
+> “I’d like to find a cardiology appointment tomorrow.”
+
+You can type this or use the microphone. Chat replies include text and request a generated voice reply; the audio player appears below the assistant response when synthesis succeeds. For a real appointment lookup or booking, configure the clinic workflow service described below.
+
+## 🔌 API overview
+
+All API routes except `GET /healthz` require:
 
 ```http
-POST /api/v1/chat
 Authorization: Bearer <API_AUTH_TOKEN>
-Content-Type: application/json
 ```
 
-```json
-{
-  "message": "Can I book a cardiology appointment tomorrow?",
-  "language_code": "en-IN",
-  "voice_reply": false
-}
-```
-
-For multiple turns, send `messages` as an ordered array of `{ "role": "user" | "assistant", "content": "..." }`. The service adds its own system prompt; caller-supplied system/tool messages are not accepted. The frontend requests both text and Bulbul audio for chat replies. Set `voice_reply` to `true` in direct API requests to get `audio_base64`; if speech generation fails, the text reply is still returned.
-
-## Voice webhook request
-
-The endpoint accepts JSON containing either a recognized `transcript` or audio in `audio_base64` with `audio_mime_type` (`audio/wav`, `audio/mpeg`, `audio/mp4`, `audio/ogg`, `audio/webm`, `audio/flac`, or `audio/aac`). Audio is limited to 5 MB; The web recorder automatically stops at 25 seconds to stay within Saaras synchronous transcription limits. `language_code` must be one of `en-IN`, `hi-IN`, `ta-IN`, `te-IN`, `kn-IN`, `mr-IN`, `bn-IN`, or `gu-IN`. Replies include transcript, text, and (unless `voice_reply` is false) base64 encoded audio.
-
-This is a webhook request/response interface, not a live media-stream bridge. For a low-latency phone call, connect your telephony provider's media stream to Sarvam's realtime Speech-to-Text WebSocket and Bulbul streaming/WebSocket output; validate that provider's webhook signature at the trusted gateway before forwarding events here. See Sarvam's [Twilio voice-agent guide](https://docs.sarvam.ai/api/integration/build-voice-agent-with-twilio) and [realtime STT guide](https://docs.sarvam.ai/api/api-guides-tutorials/speech-to-text/realtime-streaming).
-
-## Campaign trigger
-
-```json
-{
-  "campaign_type": "post_appointment_followup",
-  "patient_ids": ["opaque-patient-id"],
-  "message_template_id": "followup-v1",
-  "scheduled_time": "2026-10-12T10:00:00+05:30"
-}
-```
-
-`campaign_type` is `post_appointment_followup`, `preventive_care`, or `reengagement`. Your workflow service must enforce patient consent, contact preferences, suppression lists, authorization, and send limits before dispatching.
-
-## Workflow API contract
-
-Set `WORKFLOW_API_URL` to the root URL of a trusted integration service. Requests are sent as JSON with `Authorization: Bearer $WORKFLOW_API_TOKEN` when a token is configured. Implement these routes and return JSON. Successful side-effect responses must include `"ok": true`; the agent will not tell patients an action succeeded otherwise.
-
-| Method | Route | Purpose |
+| Method | Endpoint | Purpose |
 | --- | --- | --- |
-| GET | `/v1/appointments/slots?department=...&date=YYYY-MM-DD` | Return currently available slots |
-| POST | `/v1/appointments/book` | Book an appointment |
-| POST | `/v1/appointments/reschedule` | Reschedule an appointment |
-| POST | `/v1/appointments/cancel` | Cancel an appointment |
-| POST | `/v1/insurance/cashless/verify` | Submit/check cashless eligibility |
-| GET | `/v1/insurance/preauth/status?claim_id=...` | Return current pre-authorization status |
-| POST | `/v1/reminders` | Schedule a reminder through the configured channel |
-| POST | `/v1/campaigns/trigger` | Validate and dispatch a batch campaign |
+| `GET` | `/healthz` | Basic server health check |
+| `GET` | `/api/v1/session` | Validate the browser's API token |
+| `POST` | `/api/v1/chat` | Chat completion; set `voice_reply: true` to request audio |
+| `POST` | `/api/v1/voice/webhook` | Handle transcript or base64 audio and return transcript, reply, and optional audio |
+| `POST` | `/api/v1/translate` | Translate text using Sarvam Translate |
+| `POST` | `/api/v1/campaigns/trigger` | Submit an approved campaign to the workflow service |
 
-The agent requires explicit patient confirmation before it invokes booking, reschedule, cancellation, or reminder-scheduling tools. The workflow service must independently validate identity, consent, eligibility, and authorization; never trust model-generated tool arguments as authorization.
+### Chat example
 
-## Safety and deployment notes
+```bash
+curl -X POST http://localhost:3000/api/v1/chat \
+  -H "Authorization: Bearer YOUR_API_AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Help me find an appointment","language_code":"en-IN","voice_reply":true}'
+```
 
-This is an integration foundation, not a complete healthcare deployment or a claim of HIPAA compliance. Before handling real patient data, connect a compliant identity/access layer, secure persistence for authorized conversation state, audit trails, retention/deletion controls, secret management, TLS termination, operational monitoring, and approved healthcare workflow systems. Validate your organization's privacy, security, and regulatory requirements. The agent is limited to administrative workflows and directs emergencies to emergency services; it does not provide medical advice.
+For multi-turn requests, send `messages` as an array of `{ "role": "user" | "assistant", "content": "..." }` objects. The server supplies the system prompt and rejects caller-supplied system or tool messages. If speech generation fails, the response still includes the text reply.
 
-Sarvam API usage in this project follows the official [JavaScript SDK](https://docs.sarvam.ai/api/getting-started/sdks), [Chat Completion](https://docs.sarvam.ai/api/api-guides-tutorials/chat-completion/overview), [Saaras](https://docs.sarvam.ai/api/api-guides-tutorials/speech-to-text/overview), [Bulbul](https://docs.sarvam.ai/api/getting-started/models/bulbul), and [translation](https://docs.sarvam.ai/api/api-guides-tutorials/text-processing/translation) guides.
+### Voice input
 
+`POST /api/v1/voice/webhook` accepts either `transcript` text or `audio_base64` plus `audio_mime_type`. Supported audio MIME types are WAV, MPEG, MP4, OGG, WebM, FLAC, and AAC. Audio is limited to 5 MB; browser recordings stop at 25 seconds. Set `language_code` to one of `en-IN`, `hi-IN`, `ta-IN`, `te-IN`, `kn-IN`, `mr-IN`, `bn-IN`, or `gu-IN`. Set `voice_reply: false` if you only want text.
 
+This route is a request/response interface, not a live telephone media-stream bridge. A phone deployment needs a telephony integration, realtime audio transport, and signature verification at a trusted gateway.
 
+## 🏥 Connect a clinic workflow service
 
+Set `WORKFLOW_API_URL` to the root of a trusted adapter and `WORKFLOW_API_TOKEN` to its bearer token. The service sends JSON and expects JSON responses. Successful side effects must return `{ "ok": true }` so the assistant can accurately report completion.
 
+| Method | Workflow route | Operation |
+| --- | --- | --- |
+| `GET` | `/v1/appointments/slots?department=...&date=YYYY-MM-DD` | Find available slots |
+| `POST` | `/v1/appointments/book` | Book a confirmed appointment |
+| `POST` | `/v1/appointments/reschedule` | Reschedule a confirmed appointment |
+| `POST` | `/v1/appointments/cancel` | Cancel a confirmed appointment |
+| `POST` | `/v1/insurance/cashless/verify` | Check cashless eligibility |
+| `GET` | `/v1/insurance/preauth/status?claim_id=...` | Check pre-authorization status |
+| `POST` | `/v1/reminders` | Schedule a confirmed reminder |
+| `POST` | `/v1/campaigns/trigger` | Validate and submit a campaign |
+
+The assistant requires explicit patient confirmation before booking, rescheduling, cancelling, or scheduling a reminder. The clinic adapter must independently verify patient identity, consent, permissions, eligibility, and contact preferences. Never treat model-generated tool arguments as authorization.
+
+Campaign requests use `campaign_type` values `post_appointment_followup`, `preventive_care`, or `reengagement`, a list of opaque `patient_ids`, and a clinic-approved `message_template_id`. The clinic service must enforce consent, suppression lists, and send limits before contacting anyone.
+
+## 🗂️ Project layout
+
+```text
+.
+├── public/
+│   ├── app.js                 # Browser interactions, chat, audio, campaigns
+│   ├── index.html             # CareConnect interface
+│   └── styles.css             # Responsive visual design
+├── src/
+│   ├── agent-orchestrator.js  # Conversation loop and workflow requests
+│   ├── config.js              # Environment configuration and Sarvam client
+│   ├── sarvam-client.js       # Chat, speech, and translation helpers
+│   ├── server.js              # HTTP routes, auth, validation, static serving
+│   ├── system-prompt.js       # Healthcare assistant behavior and guardrails
+│   └── tools.js               # Structured workflow tools and validation
+├── .env.example               # Environment variable names
+├── chat.mjs                   # Minimal Sarvam chat example
+└── package.json
+```
+
+## 🔐 Privacy and safety
+
+- `.env` and `.env.*` are ignored by Git (except `.env.example`). Never commit API keys or patient data.
+- The server does not log request bodies, transcripts, patient identifiers, insurance details, or upstream response bodies.
+- Conversation history is supplied by the caller and is not persisted by this backend.
+- Use opaque patient identifiers and send only information necessary for the requested workflow.
+- The assistant is for administrative coordination, not diagnosis or medical advice. It directs emergency situations to emergency services.
+- This project is an integration foundation; it is **not a claim of HIPAA compliance** or a complete healthcare deployment. Before processing real patient data, add an approved identity and access layer, protected state storage, audit trails, retention controls, managed secrets, TLS, monitoring, and organization-approved compliance review. Do not expose a shared API token to a public browser deployment.
+
+## 📚 Sarvam references
+
+- [JavaScript SDK](https://docs.sarvam.ai/api/getting-started/sdks)
+- [Chat Completion](https://docs.sarvam.ai/api/api-guides-tutorials/chat-completion/overview)
+- [Speech-to-Text](https://docs.sarvam.ai/api/api-guides-tutorials/speech-to-text/overview)
+- [Bulbul text-to-speech](https://docs.sarvam.ai/api/getting-started/models/bulbul)
+- [Text translation](https://docs.sarvam.ai/api/api-guides-tutorials/text-processing/translation)
+- [Realtime STT guide](https://docs.sarvam.ai/api/api-guides-tutorials/speech-to-text/realtime-streaming)
+
+---
+
+<div align="center">
+  <strong>CareConnect</strong><br>
+  Built by Niraj Borole · Department of Chemical Engineering, IIT Kharagpur<br>
+  <em>Thoughtful conversations. Clear next steps. Care across languages.</em>
+</div>
