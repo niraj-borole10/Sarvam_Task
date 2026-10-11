@@ -2,7 +2,7 @@
 
 ### Care that speaks your language.
 
-CareConnect is a multilingual healthcare administration assistant built with JavaScript and Sarvam AI. **The project supports eight languages: English, Hindi, Tamil, Telugu, Kannada, Marathi, Bengali, and Gujarati.** Patients can talk or type, receive a text response and (when enabled) a spoken reply, and get help navigating everyday care coordination. The project brings chat, voice, language support, and clinic workflow integration into one approachable web experience.
+CareConnect is a multilingual healthcare administration assistant built with JavaScript and Sarvam AI. **The project supports eight languages: English, हिन्दी (Hindi), தமிழ் (Tamil), తెలుగు (Telugu), ಕನ್ನಡ (Kannada), मराठी (Marathi), বাংলা (Bengali), and ગુજરાતી (Gujarati).** Patients can talk or type, receive a text response and (when enabled) a spoken reply, and get help navigating everyday care coordination. The project brings chat, voice, language support, and clinic workflow integration into one approachable web experience.
 
 > **Created by Niraj Borole**<br>
 > Department of Chemical Engineering · Indian Institute of Technology Kharagpur
@@ -12,7 +12,7 @@ CareConnect is a multilingual healthcare administration assistant built with Jav
 ## ✨ What the project does
 
 - **Chat and voice intake:** Type a request or record a short message in the browser. Voice clips are transcribed, handled as a conversation, and answered in text with optional audio playback.
-- **Eight supported conversation languages:** English, Hindi, Tamil, Telugu, Kannada, Marathi, Bengali, and Gujarati.
+- **Eight supported conversation languages:** English, हिन्दी (Hindi), தமிழ் (Tamil), తెలుగు (Telugu), ಕನ್ನಡ (Kannada), मराठी (Marathi), বাংলা (Bengali), and ગુજરાતી (Gujarati).
 - **Appointment coordination:** Check available slots, request a booking, reschedule, or cancel through a connected clinic workflow service.
 - **Insurance coordination:** Submit a cashless insurance verification request and check pre-authorization status through the configured provider integration.
 - **Patient engagement:** Submit post-appointment follow-up, preventive care, and re-engagement campaigns. Reminders can be scheduled through the clinic workflow service.
